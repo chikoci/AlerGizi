@@ -1,4 +1,4 @@
-# AlerGizi 🛡️🥗
+# AlerGizi
 
 **Asisten Penilai Keamanan Pangan Kemasan, Peringatan Alergen, dan Batas Gula-Garam-Lemak (GGL) untuk Konsumen Harian Berbasis Regulasi Kemenkes dan BPOM RI**
 
