@@ -58,6 +58,7 @@
     analisis_ggl: GGLNutrisi;
     pemanis_buatan: PemanisBuatanInfo;
     rekomendasi_konsumen: string;
+    referensi_regulasi?: string[];
   }
 
   // Active Tab for input: DEFAULT TO 'upload' so camera NEVER turns on automatically!
