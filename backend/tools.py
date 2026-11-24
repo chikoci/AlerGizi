@@ -1,9 +1,12 @@
 """
-Tools deterministik kalkulasi nutrisi GGL dan deteksi bahan tambahan pangan
-Berdasarkan Permenkes No. 30/2013 dan Peraturan BPOM No. 31/2018
+Modul Tools Deterministik & RAG AlerGizi (3 Tools Wajib RPS Kode Peserta K=7)
+1. Tool 1: hitung_persentase_ggl (Kalkulasi Matematis Batas Harian Permenkes No. 30/2013)
+2. Tool 2: deteksi_pemanis_buatan (Deteksi BTP Pemanis Buatan & Peringatan BPOM No. 11/2019)
+3. Tool 3: cari_regulasi_bpom (Mesin RAG Penarikan Pasal dari 8 Dokumen Regulasi Nasional)
 """
 
 from typing import Dict, Any, Optional
+from rag_engine import cari_regulasi_bpom, rag_engine
 
 # Batas konsumsi harian Kemenkes RI (Permenkes No. 30/2013)
 BATAS_HARIAN_GULA_GRAM = 50.0       # 50g
@@ -105,3 +108,28 @@ def deteksi_pemanis_buatan(teks: str) -> Dict[str, Any]:
         "jenis_pemanis": ditemukan,
         "peringatan_wajib": warning
     }
+
+
+# ============================================================================
+# REGISTRASI 3 TOOLS RESMI SISTEM ALERGIZI (KODE PESERTA K=7)
+# ============================================================================
+DAFTAR_TOOLS_ALERGIZI = [
+    {
+        "nama": "hitung_persentase_ggl",
+        "tipe": "deterministik_matematis",
+        "deskripsi": "Menghitung persentase kandungan Gula, Garam (Natrium), dan Lemak per takaran saji terhadap ambang batas harian aman Kementerian Kesehatan RI (Permenkes No. 30/2013).",
+        "fungsi": hitung_persentase_ggl
+    },
+    {
+        "nama": "deteksi_pemanis_buatan",
+        "tipe": "deterministik_aturan",
+        "deskripsi": "Mendeteksi Bahan Tambahan Pangan (BTP) pemanis buatan sintetis (aspartam, sukralosa, sakarin, siklamat, asesulfam-K, neotam) dan menghasilkan kalimat peringatan wajib BPOM No. 11/2019.",
+        "fungsi": deteksi_pemanis_buatan
+    },
+    {
+        "nama": "cari_regulasi_bpom",
+        "tipe": "rag_retrieval",
+        "deskripsi": "Mengakses pipeline RAG fisik untuk meneliti pasal, ayat, dan kutipan hukum asli dari 8 dokumen acuan regulasi pangan olahan BPOM dan Kemenkes RI.",
+        "fungsi": cari_regulasi_bpom
+    }
+]

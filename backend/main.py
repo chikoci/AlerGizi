@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from schemas import ScanResponse, ScanTextRequest
 from gemini_service import audit_label_teks, audit_label_gambar
+from tools import cari_regulasi_bpom, DAFTAR_TOOLS_ALERGIZI, rag_engine
 
 app = FastAPI(
     title="AlerGizi API",
@@ -27,8 +28,35 @@ def health_check():
         "status": "healthy",
         "service": "AlerGizi",
         "version": "1.0.0",
-        "supported_models": ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
+        "supported_models": ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-2.5-flash"],
+        "rag_status": {
+            "total_chunks_loaded": len(rag_engine.chunks),
+            "dokumen_acuan_count": 8
+        },
+        "total_tools": len(DAFTAR_TOOLS_ALERGIZI)
     }
+
+
+@app.get("/api/tools")
+def list_tools():
+    """Mengembalikan daftar 3 tools resmi AlerGizi (Kode Peserta K=7)"""
+    return {
+        "kode_peserta": "K=7",
+        "formula_tools": "2 + (7 mod 2) = 3 tools",
+        "tools": [
+            {
+                "nama": t["nama"],
+                "tipe": t["tipe"],
+                "deskripsi": t["deskripsi"]
+            } for t in DAFTAR_TOOLS_ALERGIZI
+        ]
+    }
+
+
+@app.get("/api/rag/search")
+def search_rag(q: str, top_k: int = 3):
+    """Endpoint pencarian langsung ke mesin RAG 8 regulasi pangan BPOM/Kemenkes"""
+    return cari_regulasi_bpom(kata_kunci=q, top_k=top_k)
 
 
 @app.post("/api/scan-text", response_model=ScanResponse)

@@ -35,6 +35,7 @@ class ScanResponse(BaseModel):
     alergen_terdeteksi: List[AllergenInfo] = Field(default_factory=list, description="Daftar seluruh alergen yang teridentifikasi")
     analisis_ggl: GGLNutrisi = Field(description="Analisis batas konsumsi Gula Garam Lemak Kemenkes")
     pemanis_buatan: PemanisBuatanInfo = Field(description="Analisis Bahan Tambahan Pangan pemanis buatan")
+    referensi_regulasi: List[str] = Field(default_factory=list, description="Daftar pasal regulasi resmi yang ditarik dinamis melalui mesin RAG")
     rekomendasi_konsumen: str = Field(description="Anjuran porsi aman atau alternatif tindakan untuk konsumen")
     disclaimer_etis: str = Field(
         default="Sistem ini adalah asisten penilai label pangan awal, bukan pengganti diagnosis medis klinis atau jaminan ketiadaan reaksi anafilaksis berat.",
