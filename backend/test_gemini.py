@@ -23,7 +23,7 @@ try:
     from google import genai
 
     client = genai.Client(api_key=api_key)
-    model_name = "gemini-2.5-flash"
+    model_name = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
     
     print(f"[INFO] Menguji pemanggilan model ({model_name})...")
     response = client.models.generate_content(

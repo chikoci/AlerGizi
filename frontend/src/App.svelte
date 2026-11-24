@@ -19,8 +19,6 @@
     HeartPulse,
     Droplet,
     Flame,
-    Smartphone,
-    Monitor,
     ExternalLink,
     Zap,
     ChevronDown
@@ -61,10 +59,6 @@
     pemanis_buatan: PemanisBuatanInfo;
     rekomendasi_konsumen: string;
   }
-
-  // Device view mode: 'mobile' (Phone Frame) or 'desktop' (Full width)
-  // Default to 'mobile' as requested for instant phone preview inside Antigravity!
-  let viewMode: 'mobile' | 'desktop' = 'mobile';
 
   // Active Tab for input: DEFAULT TO 'upload' so camera NEVER turns on automatically!
   let activeTab: 'upload' | 'camera' | 'text' = 'upload';
@@ -274,6 +268,9 @@
     }
 
     loading = true;
+    errorMsg = null;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
 
     try {
       let res;
@@ -288,12 +285,14 @@
 
         res = await fetch('/api/scan-image', {
           method: 'POST',
-          body: formData
+          body: formData,
+          signal: controller.signal
         });
       } else {
         res = await fetch('/api/scan-text', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
           body: JSON.stringify({
             komposisi_teks: textInput,
             profil_alergi: userAllergies,
@@ -303,6 +302,8 @@
           })
         });
       }
+
+      clearTimeout(timeoutId);
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
@@ -318,7 +319,12 @@
       }, 150);
 
     } catch (err: any) {
-      errorMsg = err.message || 'Gagal menghubungi server backend. Pastikan server aktif di port 8000.';
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError') {
+        errorMsg = 'Waktu permintaan habis (Timeout). Pastikan backend aktif di port 8000 dengan menjalankan: ./.venv/Scripts/python main.py';
+      } else {
+        errorMsg = err.message || 'Gagal menghubungi server backend. Pastikan server aktif di port 8000.';
+      }
     } finally {
       loading = false;
     }
@@ -420,7 +426,7 @@
       <div>
         <span class="saas-brand-name">AlerGizi</span>
         <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 ml-1.5 border border-emerald-300">
-          AI Edition
+          Scanner
         </span>
       </div>
     </a>
@@ -458,7 +464,7 @@
 
     <!-- Subtitle -->
     <p class="saas-hero-subtitle">
-      Asisten cerdas berbasis AI Vision Google Gemini 3.5 & mesin kalkulasi deterministik. Memeriksa komposisi kemasan, mendeteksi 10 alergen tersembunyi, dan memantau kuota konsumsi Gula-Garam-Lemak secara akurat.
+      Asisten cerdas berbasis AI Vision Google Gemini (Gemini 3.5 Flash Lite) & mesin kalkulasi deterministik. Memeriksa komposisi kemasan, mendeteksi 10 alergen tersembunyi, dan memantau kuota konsumsi Gula-Garam-Lemak secara akurat.
     </p>
 
     <!-- Call to Action Buttons (Bartoon Style) -->
@@ -504,57 +510,17 @@
   </header>
 
   <!-- ================================================================= -->
-  <!-- DEVICE SWITCHER BAR (INSTANT MOBILE VIEW IN ANTIGRAVITY!) -->
+  <!-- INTERACTIVE SCANNER APPLICATION (FULL WIDTH DASHBOARD) -->
   <!-- ================================================================= -->
-  <div class="relative z-10 px-4 mb-4">
-    <div class="device-toggle-bar">
-      <button 
-        type="button" 
-        class="device-toggle-btn {viewMode === 'mobile' ? 'active' : ''}"
-        on:click={() => viewMode = 'mobile'}
-      >
-        <Smartphone size={16} />
-        <span>Tampilan Ponsel (Mobile Frame)</span>
-      </button>
-
-      <button 
-        type="button" 
-        class="device-toggle-btn {viewMode === 'desktop' ? 'active' : ''}"
-        on:click={() => viewMode = 'desktop'}
-      >
-        <Monitor size={16} />
-        <span>Tampilan Penuh (Full Width)</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- ================================================================= -->
-  <!-- INTERACTIVE SCANNER APPLICATION (CONTAINER WRAPPER) -->
-  <!-- ================================================================= -->
-  <main id="interactive-scanner-section" class="relative z-10 px-3 pb-12">
-    
-    <!-- WRAPPER: EITHER REALISTIC SMARTPHONE FRAME OR FULL WIDTH DESKTOP -->
-    <div class={viewMode === 'mobile' ? 'phone-mockup-wrapper' : 'fullwidth-dashboard-wrapper'}>
-      
-      <!-- If in Mobile Frame Mode: Show Phone Bezel & Dynamic Island -->
-      {#if viewMode === 'mobile'}
-        <div class="phone-notch-bar">
-          <span>09:41</span>
-          <div class="phone-dynamic-island"></div>
-          <span class="flex items-center gap-1">5G 📶 100%</span>
+  <main id="interactive-scanner-section" class="relative z-10 px-4 pb-16 w-full flex flex-col items-center">
+    <div class="scanner-main-container w-full" style="max-width: 960px; width: 100%; margin-left: auto; margin-right: auto;">
+      <!-- Error Alert Message -->
+      {#if errorMsg}
+        <div class="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs font-semibold flex items-center gap-2.5">
+          <AlertOctagon size={18} class="text-red-600 shrink-0" />
+          <span>{errorMsg}</span>
         </div>
       {/if}
-
-      <!-- Screen Canvas Content -->
-      <div class={viewMode === 'mobile' ? 'phone-inner-screen' : ''}>
-        
-        <!-- Error Alert Message -->
-        {#if errorMsg}
-          <div class="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs font-semibold flex items-center gap-2.5">
-            <AlertOctagon size={18} class="text-red-600 flex-shrink-0" />
-            <span>{errorMsg}</span>
-          </div>
-        {/if}
 
         <!-- ================================================================= -->
         <!-- STEP 1: MASUKAN LABEL PANGAN (DEFAULT: UPLOAD GALLERY/FILE!) -->
@@ -748,9 +714,9 @@
           <!-- 2.1: 10 Alergen BPOM -->
           <div class="mb-6">
             <div class="flex items-center justify-between mb-2.5">
-              <label class="text-xs font-bold text-slate-900">
+              <span class="text-xs font-bold text-slate-900">
                 10 Alergen Wajib BPOM RI (Pasal 41)
-              </label>
+              </span>
               <span class="text-[11px] text-slate-400">Klik untuk memilih</span>
             </div>
 
@@ -843,9 +809,9 @@
           <!-- 2.2: Pembatasan Nutrisi GGL (G4-G1-L5) -->
           <div>
             <div class="mb-3">
-              <label class="text-xs font-bold text-slate-900 block">
+              <span class="text-xs font-bold text-slate-900 block">
                 Pembatasan Khusus Penyakit Degeneratif (Permenkes 30/2013)
-              </label>
+              </span>
               <p class="text-[11px] text-slate-500">Pilih kondisi kesehatan untuk pengawasan ketat ambang batas harian.</p>
             </div>
 
@@ -935,7 +901,7 @@
         >
           {#if loading}
             <RefreshCw size={20} class="animate-spin text-emerald-400" />
-            <span>Sedang Memeriksa dengan Gemini 3.5...</span>
+            <span>Sedang Memeriksa dengan Gemini 3.5 Flash Lite...</span>
           {:else}
             <ShieldCheck size={20} class="text-emerald-400" />
             <span>Audit Keamanan Pangan Sekarang</span>
@@ -1046,6 +1012,7 @@
                       <tr class="border-b border-slate-200 text-slate-500 font-bold bg-slate-50">
                         <th class="py-2 px-2.5">Bahan</th>
                         <th class="py-2 px-2.5">Kategori BPOM</th>
+                        <th class="py-2 px-2.5">Dasar Regulasi (RAG)</th>
                         <th class="py-2 px-2.5">Status</th>
                       </tr>
                     </thead>
@@ -1055,6 +1022,9 @@
                         <tr class="border-b border-slate-100 hover:bg-slate-50">
                           <td class="py-2.5 px-2.5 font-bold text-slate-900">{item.bahan}</td>
                           <td class="py-2.5 px-2.5 text-slate-700">{item.kategori_alergen}</td>
+                          <td class="py-2.5 px-2.5 text-slate-500 text-[11px] font-mono">
+                            <span class="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">{item.kutipan_pasal}</span>
+                          </td>
                           <td class="py-2.5 px-2.5">
                             {#if isUserRisk}
                               <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-red-100 text-red-800 border border-red-300">
@@ -1071,6 +1041,17 @@
                     </tbody>
                   </table>
                 </div>
+
+                {#if result.referensi_regulasi && result.referensi_regulasi.length > 0}
+                  <div class="mt-3 pt-2.5 border-t border-slate-200 flex items-center gap-1.5 flex-wrap">
+                    <span class="text-[10px] font-bold text-slate-500">Kutipan Regulasi RAG Terkait:</span>
+                    {#each result.referensi_regulasi as ref}
+                      <span class="text-[10px] px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold border border-blue-200">
+                        📜 {ref}
+                      </span>
+                    {/each}
+                  </div>
+                {/if}
               {/if}
             </div>
 
@@ -1163,23 +1144,24 @@
           </section>
         {/if}
 
-      </div>
     </div>
   </main>
 
   <!-- ================================================================= -->
   <!-- ACADEMIC FOOTER (INSTITUT TEKNOLOGI KALIMANTAN) -->
   <!-- ================================================================= -->
-  <footer id="akademik" class="saas-footer relative z-10">
-    <p class="text-sm font-extrabold text-slate-900 mb-1">
-      Institut Teknologi Kalimantan (ITK) • Program Studi Sistem Informasi
-    </p>
-    <p class="text-xs font-semibold text-slate-700 mb-2">
-      Mata Kuliah: Kapita Selekta - AI Engineering &nbsp;|&nbsp; Dosen Pengampu: <strong>Aidil Saputra Kirsan, S.ST., M.Tr.Kom.</strong>
-    </p>
-    <p class="text-xs text-slate-500 max-w-xl mx-auto leading-relaxed">
-      Sistem audit terintegrasi memadukan penglihatan cerdas Google Gemini 3.5 dengan mesin kalkulasi deterministik bebas halusinasi berbasis Permenkes No. 30/2013 dan Peraturan BPOM No. 31/2018.
-    </p>
+  <footer id="akademik" class="saas-footer relative z-10 border-t border-slate-200 mt-12 py-10 px-4 w-full flex flex-col items-center">
+    <div class="saas-footer-content w-full" style="max-width: 760px; margin-left: auto; margin-right: auto; text-align: center;">
+      <p class="text-sm font-extrabold text-slate-900 mb-1 text-center">
+        Institut Teknologi Kalimantan (ITK) • Program Studi Sistem Informasi
+      </p>
+      <p class="text-xs font-semibold text-slate-700 mb-2 text-center">
+        Mata Kuliah: Kapita Selekta - AI Engineering &nbsp;|&nbsp; Dosen Pengampu: <strong>Aidil Saputra Kirsan, S.ST., M.Tr.Kom.</strong>
+      </p>
+      <p class="text-xs text-slate-500 leading-relaxed text-center mx-auto">
+        Sistem audit terintegrasi memadukan penglihatan cerdas Google Gemini dengan mesin kalkulasi deterministik bebas halusinasi berbasis Permenkes No. 30/2013 dan Peraturan BPOM No. 31/2018.
+      </p>
+    </div>
   </footer>
 
 </div>

@@ -30,10 +30,8 @@
   --radius-xl: 32px;
 }
 
-* {
+*, ::before, ::after {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 /* Strict anti-slant reset: NO text renders italic ("bebas efek mereng") */
@@ -615,10 +613,37 @@ body {
   transition: width 0.7s ease;
 }
 
+/* Interactive Scanner Container & Academic Footer Centering */
+#interactive-scanner-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.scanner-main-container {
+  width: 100%;
+  max-width: 960px;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
 /* Footer */
 .saas-footer {
+  width: 100%;
   margin-top: 4rem;
   padding: 2.5rem 1.5rem 5rem 1.5rem;
   border-top: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
+}
+
+.saas-footer-content {
+  width: 100%;
+  max-width: 760px;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  text-align: center !important;
 }
